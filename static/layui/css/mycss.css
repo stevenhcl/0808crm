@@ -1,0 +1,11 @@
+/**
+ * 注册页面 提示信息样式
+ */
+.reg_span{
+    color: red;
+    font-size: 12px;
+    display: block;
+    padding-left:20px;
+    padding-bottom: 10px;
+}
+

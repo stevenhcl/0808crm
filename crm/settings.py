@@ -25,12 +25,13 @@ SECRET_KEY = 'django-insecure-mqo7)s7b_vd#pq!@ezpc+bu8-gl=+&cc3&cyaofs^)adhu^*4b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # 允许所有ip访问
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'system',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -84,7 +85,7 @@ DATABASES = {
         'PASSWORD': 'rootroot', # 数据库密码
         'HOST': 'localhost', # 数据库服务器地址
         'PORT': '3306', # 数据库端口
-        'ATOMIC_REQUESTS': True # 是否开启事务操作 True开启
+        'ATOMIC_REQUESTS': True # 是否开启事务操作 True开启 全局生效自动提交事务
     }
 }
 

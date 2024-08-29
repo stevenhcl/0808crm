@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+{#导入静态资源#}
+{% load static %}
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>用户注册</title>
+  <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+  <link href="../static/layui/css/layui.css" rel="stylesheet">
+      <link href="../static/layui/css/mycss.css" rel="stylesheet">
+</head>
+<body>
+{#csrf保护#}
+{% csrf_token %}
+<style>
+.demo-reg-container{width: 320px; margin: 21px auto 0;}
+.demo-reg-other .layui-icon{position: relative; display: inline-block; margin: 0 2px; top: 2px; font-size: 26px;}
+</style>
+<form class="layui-form">
+  <div class="demo-reg-container">
+    
+    <div class="layui-form-item">
+      <div class="layui-input-wrap">
+        <div class="layui-input-prefix">
+          <i class="layui-icon layui-icon-username"></i>
+        </div>
+        <input type="text" id="reg-username" name="username" value="" lay-verify="required" placeholder="用户名(以字母开头或字母开头加数字)" lay-reqtext="请填写用户名" autocomplete="off" class="layui-input" lay-affix="clear">
+          <b><span id="reg_username" class="reg_span"></span></b>
+      </div>
+    </div>
+      
+    <div class="layui-form-item">
+      <div class="layui-input-wrap">
+        <div class="layui-input-prefix">
+          <i class="layui-icon layui-icon-email"></i>
+        </div>
+        <input type="text" id="reg_email" name="email" value="" lay-verify="email" placeholder="邮箱" lay-reqtext="请输入邮箱" autocomplete="off" class="layui-input">
+          <b><span id="reg_span" class="reg_span"></span></b>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <div class="layui-input-wrap">
+        <div class="layui-input-prefix">
+          <i class="layui-icon layui-icon-password"></i>
+        </div>
+        <input type="password" name="password" value="" lay-verify="required" placeholder="密码" autocomplete="off" class="layui-input" id="reg-password"  lay-reqtext="请填写密码" lay-affix="eye">
+           <b><span id="reg_pwd" class="reg_span"></span></b>
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <div class="layui-input-wrap">
+        <div class="layui-input-prefix">
+          <i class="layui-icon layui-icon-password"></i>
+        </div>
+        <input type="password" name="confirmPassword" value="" lay-verify="required|confirmPassword" placeholder="确认密码" autocomplete="off" class="layui-input"  lay-reqtext="请填写确认密码" lay-affix="eye">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <input type="checkbox" name="agreement" lay-verify="required" lay-skin="primary" title="同意"> 
+      <a href="#terms" target="_blank" style="position: relative; top: 6px; left: -15px;">
+        <ins>用户协议</ins>
+      </a>
+    </div>
+    <div class="layui-form-item">
+      <button id="reg-btn" class="layui-btn layui-btn-fluid"  lay-submit lay-filter="demo-reg">注册</button>
+        <br/>
+{#      <input type="button" id="reg-demo" class="layui-btn layui-btn-fluid" disabled value="注册">#}
+    </div>
+    <div class="layui-form-item demo-reg-other">
+      <label>社交账号注册</label>
+      <span style="padding: 0 21px 0 6px;">
+        <a href="javascript:;"><i class="layui-icon layui-icon-login-qq" style="color: #3492ed;"></i></a>
+        <a href="javascript:;"><i class="layui-icon layui-icon-login-wechat" style="color: #4daf29;"></i></a>
+        <a href="javascript:;"><i class="layui-icon layui-icon-login-weibo" style="color: #cf1900;"></i></a>
+      </span>
+      <a href="{% url 'system:login_register' %}">登录已有帐号</a>
+    </div>
+  </div>
+</form>
+  
+<!-- 导入 layui.js 地址 -->
+<script type="text/javascript" src="../static/layui/layui.js"></script>
+<script type="text/javascript" src="../static/jquery/jquery-3.7.1.min.js"></script>
+<script src="../static/jquery/jquery.cookie.js"></script>
+<script>
+    layui.use(function(){
+      var $ = layui.$;
+      var form = layui.form;
+      var layer = layui.layer;
+      var util = layui.util;
+      
+      //验证邮箱
+        function email_check(){
+            email = $('#reg_email').val().trim();
+            {#if ('' == $.trim(email)  || $.trim(email) == '邮箱' || $.trim(email) == null){#}
+            if ('' === email  || undefined === email || null === email){
+                $("#reg_span").html("邮箱不能为空");
+                {#layer.msg('请输入邮箱');#}
+                return false;
+            }
+            var reg = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]{2,3}){1,2})$/;
+            if(!reg.test(email)){
+                 $("#reg_span").html("请输入正确的邮箱格式");
+                {#layer.msg('邮箱格式不正确');#}
+                return false;
+            }
+            //合法后清空提示
+            $("#reg_span").html("");
+            
+               //合法后清空提示后，发送ajax请求验证邮箱是否已存在
+            $.ajax({
+                
+                type: "POST",
+                url: "{% url 'system:unique_email' %}",
+                {#url: "http://localhost:8000/unique_email",#}
+                async:false,  //false同步  true异步
+                data: {
+                    "email": email,
+                    "csrfmiddlewaretoken": $.cookie('csrftoken'),
+                },
+                dataType: "json",
+                success: function (result) {
+                    if (result.code === 1) {
+                        $("#reg_span").html(result.msg);
+                        return false;
+                    }
+                    if ( 0 === result.code ) {
+                       $("#reg_span").html(result.msg);
+                        return true;
+                    }                   
+                }
+            });
+        }
+        $("#reg_email").blur(function(){
+          email_check();
+            
+        });
+        
+      //验证密码长度6位至16位
+        $("#reg-password").on('blur',function(){
+            password = $(this).val().trim();
+            if ('' === password  || undefined === password || null === password){
+                $("#reg_pwd").html("密码不能为空");
+                {#layer.msg('请输入密码');#}
+                return false;
+            }
+
+            if(password.length < 6 || password.length > 16){
+                $("#reg_pwd").html("密码长度为6至16们");
+                {#layer.msg('密码长度不能小于6位');#}
+                return false;
+            }
+             {#var reg = /^[a-zA-Z0-9]{6,16}$/;#}
+            var reg = /^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)(?=.*?[0-9])[a-zA-Z\d0-9]{6,16}$/;
+            if(!reg.test(password)){
+                 $("#reg_pwd").html("密码格式不正确，必须包含大写字母、小写字母和数字");
+                {#layer.msg('密码长度不能小于6位');#}
+                return false;
+            }
+            //合法后清空提示
+            $("#reg_pwd").html("");
+        });  
+      
+        function username_check(){
+            var username = $("#reg-username").val().trim();
+            if ('' === username  || undefined === username || null === username){
+                $("#reg_username").html("用户名不能为空");
+                {#layer.msg('请输入用户名');#}
+                return false;
+            }
+            //验证用户名 字母数字   /[A-Za-z0-9]/.test(str);  ^[A-Za-z0-9]{4,40}$
+            //var reg = /^(?=.*?[a-z])(?=.*?[A-Z])(?=.*?\d)(?=.*?[0-9])[a-zA-Z\d0-9]{6,16}$/;
+            var reg = /^[a-zA-Z][a-zA-Z0-9]{4,16}$/;
+            if(!reg.test(username)){
+                $("#reg_username").html("用户名格式不正确，必须以字母开头，4-16位字母数或字母数字组合");    
+                return false;
+            }
+            //合法后清空提示
+            $("#reg_username").html("");
+            
+            //合法后清空提示后，发送ajax请求验证用户名是否已存在
+            $.ajax({
+                type: "POST",
+                url: "{% url 'system:unique_username' %}",
+                {#url: "http://localhost:8000/unique_username",#}
+                async:false,  //false同步  true异步
+                data: {
+                    "username": username,
+                    "csrfmiddlewaretoken": $.cookie('csrftoken'),
+                },
+                dataType: "json",
+                success: function (result) {
+                    if (result.code === 1) {
+                        $("#reg_username").html(result.msg);
+                        return false;
+                    }
+                    if ( 0 === result.code ) {
+                        $("#reg_username").html(result.msg);
+                        return true;
+                    }
+                }
+
+            });
+        }
+        //用户验证
+        $("#reg-username").on('blur',function(){
+            username_check()
+        });
+        
+        
+      // 自定义验证规则
+      form.verify({
+        // 确认密码
+        confirmPassword: function(value, item){
+          var passwordValue = $('#reg-password').val();
+          if(value !== passwordValue){
+            return '两次密码输入不一致';
+          }
+        }
+      });
+      //占地注册按钮置灰
+      //$('#demo-reg').attr('disabled','true');
+      $("#reg-demo").on('click',function(){
+        $("#reg-demo").attr('disabled','true');  
+      });
+        
+              
+      // 提交事件
+      form.on('submit(demo-reg)', function(data){
+        var field = data.field; // 获取表单字段值
+        console.log('------------')
+        console.log(field);
+        // 是否勾选同意
+        if(!field.agreement){
+          layer.msg('您必须勾选同意用户协议才能注册');
+          return false;
+        }
+        // 验证用户名是否已存在
+        result_check_username = username_check()
+        if(false === result_check_username ){
+            return false;
+        }
+        //验证邮箱是否已存在
+        result_check_email = email_check()
+        if(false === result_check_email ){
+            return false;
+        }
+        // 显示填写结果，仅作演示用
+        //layer.alert(JSON.stringify(field), {
+        //  title: '当前填写的字段值'
+        //});
+        //注册提交按钮禁用
+        //$('#demo-reg').attr('disabled','true');
+        // 此处可执行 Ajax 等操作
+        // …
+        $.ajax({
+            type: "POST",
+            url: "{% url 'system:send_email' %}",
+            data: {                
+                "csrfmiddlewaretoken": $.cookie('csrftoken'),
+                "email": field.email,
+                "username": field.username,
+                "password": field.password,
+            },
+            dataType: "json",
+            success: function (result) {
+                if (result.code === 1)
+                    layer.msg(result.msg,{time: 5000});
+                if (result.code === -1)
+                    layer.msg(result.msg);                
+            },
+            error: function (result) {
+                layer.msg('发送失败');
+            },
+            
+        })
+        
+        return false; // 阻止默认 form 跳转
+      });
+      
+      // 普通事件
+      util.on('lay-on', {
+        // 获取验证码
+        'reg-get-vercode': function(othis){
+          var isvalid = form.validate('#reg-cellphone'); // 主动触发验证，v2.7.0 新增 
+          // 验证通过
+          if(isvalid){
+            layer.msg('手机号规则验证通过');
+            // 此处可继续书写「发送验证码」等后续逻辑
+            // …
+          }
+        }
+      });
+    });
+</script>
+
+</body>
+</html>
